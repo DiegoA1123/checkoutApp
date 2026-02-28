@@ -27,7 +27,7 @@ export class PayTransactionUseCase {
       cvc: string;
       holder: string;
     };
-  }): Promise<Result<any, Error>> {
+  }): Promise<Result<import('@prisma/client').Transaction, Error>> {
     const transaction = await this.transactionRepository.findById(
       input.transactionId,
     );
