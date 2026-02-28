@@ -1,17 +1,13 @@
 export interface PaymentGatewayPort {
-  pay(input: {
+  createTransaction(input: {
     reference: string;
-    amount: number;
-    card: {
-      number: string;
-      expMonth: string;
-      expYear: string;
-      cvc: string;
-      holder: string;
-    };
+    amountInCents: number;
+    currency: 'COP';
+    customerEmail: string;
+    paymentSourceId: number;
   }): Promise<{
-    status: 'APPROVED' | 'DECLINED' | 'ERROR';
-    gatewayId?: string;
-    raw?: any;
+    gatewayTransactionId: string;
+    status: string;
+    raw: any;
   }>;
 }

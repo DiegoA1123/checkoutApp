@@ -50,11 +50,10 @@ export class TransactionsController {
   async pay(@Param('id') id: string, @Body() dto: PayTransactionDto) {
     const result = await this.payTx.execute({
       transactionId: id,
-      card: dto.card,
+      paymentSourceId: dto.paymentSourceId,
+      customerEmail: dto.customerEmail,
     });
-    if (!result.ok) {
-      throw new BadRequestException(result.error.message);
-    }
+    if (!result.ok) throw new BadRequestException(result.error.message);
     return result.value;
   }
 

@@ -1,5 +1,5 @@
-import { Injectable, Inject } from '@nestjs/common';
-import { TransactionStatus } from '@prisma/client';
+import { Inject, Injectable } from '@nestjs/common';
+import { Transaction, TransactionStatus } from '@prisma/client';
 import { Err, Ok, Result } from '../result';
 import {
   InvalidStateError,
@@ -23,74 +23,49 @@ export class PayTransactionUseCase {
 
   async execute(input: {
     transactionId: string;
-    card: {
-      number: string;
-      expMonth: string;
-      expYear: string;
-      cvc: string;
-      holder: string;
-    };
-  }): Promise<Result<import('@prisma/client').Transaction, Error>> {
-    const transaction = await this.transactionRepository.findById(
-      input.transactionId,
-    );
-    if (!transaction) {
-      return Err(new NotFoundError('Transaction'));
-    }
-
-    if (transaction.status !== TransactionStatus.PENDING) {
+    paymentSourceId: number;
+    customerEmail: string;
+  }): Promise<Result<Transaction, Error>> {
+    const tx = await this.transactionRepository.findById(input.transactionId);
+    if (!tx) return Err(new NotFoundError('Transaction'));
+    if (tx.status !== TransactionStatus.PENDING)
       return Err(new InvalidStateError('Transaction is not PENDING'));
-    }
 
-    const product = await this.productRepository.findById(
-      transaction.productId,
-    );
-    if (!product) {
-      return Err(new NotFoundError('Product'));
-    }
-    if (product.stock <= 0) {
-      return Err(new OutOfStockError());
-    }
+    const product = await this.productRepository.findById(tx.productId);
+    if (!product) return Err(new NotFoundError('Product'));
+    if (product.stock <= 0) return Err(new OutOfStockError());
 
-    const response = await this.paymentGateway.pay({
-      reference: transaction.reference,
-      amount: transaction.totalAmount,
-      card: input.card,
+    const gatewayResponse = await this.paymentGateway.createTransaction({
+      reference: tx.reference,
+      amountInCents: tx.totalAmount,
+      currency: 'COP',
+      customerEmail: input.customerEmail,
+      paymentSourceId: input.paymentSourceId,
     });
 
-    if (response.status === 'APPROVED') {
-      await this.productRepository.decreaseStock(transaction.productId);
-      const updated = await this.transactionRepository.updateStatus(
-        transaction.id,
-        TransactionStatus.APPROVED,
-        {
-          gatewayTransactionId: response.gatewayId ?? null,
-          gatewayRawResponse: response.raw ?? null,
-        },
-      );
-      return Ok(updated);
-    }
-
-    if (response.status === 'DECLINED') {
-      const updated = await this.transactionRepository.updateStatus(
-        transaction.id,
-        TransactionStatus.DECLINED,
-        {
-          gatewayTransactionId: response.gatewayId ?? null,
-          gatewayRawResponse: response.raw ?? null,
-        },
-      );
-      return Ok(updated);
-    }
+    const gatewayStatus = String(gatewayResponse.status || '').toUpperCase();
+    const mapped =
+      gatewayStatus === 'APPROVED'
+        ? TransactionStatus.APPROVED
+        : gatewayStatus === 'DECLINED'
+          ? TransactionStatus.DECLINED
+          : gatewayStatus === 'PENDING'
+            ? TransactionStatus.PENDING
+            : TransactionStatus.ERROR;
 
     const updated = await this.transactionRepository.updateStatus(
-      transaction.id,
-      TransactionStatus.ERROR,
+      tx.id,
+      mapped,
       {
-        gatewayTransactionId: response.gatewayId ?? null,
-        gatewayRawResponse: response.raw ?? null,
+        gatewayTransactionId: gatewayResponse.gatewayTransactionId ?? null,
+        gatewayRawResponse: gatewayResponse.raw ?? null,
       },
     );
+
+    if (mapped === TransactionStatus.APPROVED) {
+      await this.productRepository.decreaseStock(tx.productId);
+    }
+
     return Ok(updated);
   }
 }
