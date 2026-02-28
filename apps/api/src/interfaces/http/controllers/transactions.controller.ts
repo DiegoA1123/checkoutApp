@@ -28,9 +28,9 @@ export class TransactionsController {
 
   @Post()
   async create(@Body() dto: CreateTransactionDto) {
-    const baseFee = Number(this.config.get('BASE_FEE_') ?? 4900);
+    const baseFee = Number(this.config.get('BASE_FEE_CENTS') ?? 4900);
     const deliveryFee = Number(
-      this.config.get('DEFAULT_DELIVERY_FEE_') ?? 12000,
+      this.config.get('DEFAULT_DELIVERY_FEE_CENTS') ?? 12000,
     );
 
     const result = await this.createPending.execute({
