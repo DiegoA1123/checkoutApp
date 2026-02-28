@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 import { Err, Ok, Result } from '../result';
 import {
   OutOfStockError,
@@ -23,9 +23,13 @@ type Output = {
 @Injectable()
 export class CreatePendingTransactionUseCase {
   constructor(
+    @Inject('ProductRepoPort')
     private productRepository: productRepoPort.ProductRepoPort,
+    @Inject('CustomerRepoPort')
     private customerRepository: customerRepoPort.CustomerRepoPort,
+    @Inject('DeliveryRepoPort')
     private deliveryRepository: deliveryRepoPort.DeliveryRepoPort,
+    @Inject('TransactionRepoPort')
     private transactionRepository: transactionRepoPort.TransactionRepoPort,
   ) {}
 

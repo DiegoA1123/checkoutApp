@@ -4,6 +4,7 @@ import {
   Get,
   Param,
   Post,
+  Inject,
   BadRequestException,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
@@ -21,6 +22,7 @@ export class TransactionsController {
     private config: ConfigService,
     private createPending: CreatePendingTransactionUseCase,
     private payTx: PayTransactionUseCase,
+    @Inject('TransactionRepoPort')
     private transactionRepository: transactionRepoPort.TransactionRepoPort,
   ) {}
 

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 import { TransactionStatus } from '@prisma/client';
 import { Err, Ok, Result } from '../result';
 import {
@@ -13,8 +13,11 @@ import * as productRepoPort from '../../domain/ports/product-repo.port';
 @Injectable()
 export class PayTransactionUseCase {
   constructor(
+    @Inject('TransactionRepoPort')
     private transactionRepository: transactionRepoPort.TransactionRepoPort,
+    @Inject('ProductRepoPort')
     private productRepository: productRepoPort.ProductRepoPort,
+    @Inject('PaymentGatewayPort')
     private paymentGateway: paymentGatewayPort.PaymentGatewayPort,
   ) {}
 
