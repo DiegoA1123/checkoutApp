@@ -6,6 +6,6 @@ export interface DeliveryRepoPort {
     address: string;
     city: string;
     notes?: string | null;
-    fee: number;
+    feeTotal: number;
   }): Promise<Delivery>;
 }

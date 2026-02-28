@@ -17,6 +17,9 @@ export interface TransactionRepoPort {
   updateStatus(
     id: string,
     status: TransactionStatus,
-    extra?: { gatewayTransactionId?: string | null; gatewayRawResponse?: any },
+    extra?: {
+      gatewayTransactionId?: string | null;
+      gatewayRawResponse?: unknown;
+    },
   ): Promise<Transaction>;
 }
