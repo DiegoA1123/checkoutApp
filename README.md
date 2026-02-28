@@ -89,3 +89,54 @@ Para insertar los productos iniciales de prueba:
 ```bash
 npx prisma db seed
 ```
+
+## API y Pruebas (Postman)
+
+La API corre por defecto en `http://localhost:3000`. También puedes acceder a la documentación interactiva en:
+
+- **Swagger UI**: [http://localhost:3000/docs](http://localhost:3000/docs)
+
+### Endpoints Principales
+
+#### 1. Productos
+
+- **Listar productos**: `GET /products`
+- **Obtener producto**: `GET /products/:id`
+
+#### 2. Transacciones
+
+- **Crear Transacción Pendiente**: `POST /transactions`
+  - **Body (JSON)**:
+
+    ```json
+    {
+      "productId": "ID_DEL_PRODUCTO",
+      "customer": {
+        "fullName": "Juan Perez",
+        "email": "juan@example.com",
+        "phone": "3001234567"
+      },
+      "delivery": {
+        "address": "Calle 123 #45-67",
+        "city": "Bogotá",
+        "notes": "Torre 1 Apt 101"
+      }
+    }
+    ```
+
+- **Pagar Transacción**: `POST /transactions/:id/pay`
+  - **Body (JSON)**:
+
+    ```json
+    {
+      "card": {
+        "number": "4242424242424242",
+        "expMonth": "12",
+        "expYear": "25",
+        "cvc": "123",
+        "holder": "JUAN PEREZ"
+      }
+    }
+    ```
+
+- **Consultar Estado**: `GET /transactions/:id`
