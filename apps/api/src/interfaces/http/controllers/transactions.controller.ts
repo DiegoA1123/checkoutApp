@@ -14,7 +14,7 @@ import { PayTransactionDto } from '../../../application/dto/pay-transaction.dto'
 import { CreatePendingTransactionUseCase } from '../../../application/usecases/create-pending-transaction.usecase';
 import { PayTransactionUseCase } from '../../../application/usecases/pay-transaction.usecase';
 import * as transactionRepoPort from '../../../domain/ports/transaction-repo.port';
-
+import { SyncTransactionUseCase } from '../../../application/usecases/sync-transaction.usecase';
 @ApiTags('transactions')
 @Controller('transactions')
 export class TransactionsController {
@@ -24,6 +24,7 @@ export class TransactionsController {
     private payTx: PayTransactionUseCase,
     @Inject('TransactionRepoPort')
     private transactionRepository: transactionRepoPort.TransactionRepoPort,
+    private syncTx: SyncTransactionUseCase,
   ) {}
 
   @Post()
@@ -50,15 +51,22 @@ export class TransactionsController {
   async pay(@Param('id') id: string, @Body() dto: PayTransactionDto) {
     const result = await this.payTx.execute({
       transactionId: id,
-      paymentSourceId: dto.paymentSourceId,
+      cardToken: dto.cardToken,
       customerEmail: dto.customerEmail,
     });
+
     if (!result.ok) throw new BadRequestException(result.error.message);
     return result.value;
   }
-
   @Get(':id')
   async get(@Param('id') id: string) {
     return this.transactionRepository.findById(id);
+  }
+
+  @Post(':id/sync')
+  async sync(@Param('id') id: string) {
+    const result = await this.syncTx.execute({ transactionId: id });
+    if (!result.ok) throw new BadRequestException(result.error.message);
+    return result.value;
   }
 }

@@ -1,142 +1,176 @@
-# Checkout App
+# 🚀 Checkout App
 
-Aplicación de checkout con integración de base de datos Postgres y pgAdmin.
+Aplicación de checkout full-stack con:
 
-## Infraestructura
+* **Backend:** NestJS + Prisma + PostgreSQL
+* **Frontend:** Vue 3 + Vite
+* **Base de Datos:** PostgreSQL (Docker)
+* **Integración de pagos:** Wompi
+* **Infraestructura local:** Docker Compose
 
-El proyecto utiliza Docker para gestionar la base de datos y la herramienta de administración pgAdmin.
+## Infraestructura con Docker
 
-### Requisitos Previos
+El proyecto usa Docker para levantar:
+* PostgreSQL
+* pgAdmin
+* API (NestJS)
+* Web (Vue + Nginx)
 
-- Docker y Docker Desktop instalados y corriendo.
+## Requisitos
 
-## Configuración de Base de Datos
+* Docker Desktop instalado y corriendo
+* Node 20+ (solo si vas a ejecutar local sin Docker)
 
-### 1. Configurar Variables de Entorno
+## Variables de Entorno
 
-**Antes de iniciar**, es obligatorio configurar los archivos `.env`. Los datos que uses aquí serán los que necesites para conectar pgAdmin y la API.
-
-**infra/.env**:
-
+###  infra/.env
 ```dotenv
-POSTGRES_USER=
-POSTGRES_PASSWORD=
-POSTGRES_DB=
-POSTGRES_PORT=
-PGADMIN_DEFAULT_EMAIL=
-PGADMIN_DEFAULT_PASSWORD=
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=postgres
+POSTGRES_DB=checkout
+POSTGRES_PORT=5432
+
+PGADMIN_DEFAULT_EMAIL=admin@admin.com
+PGADMIN_DEFAULT_PASSWORD=admin
+
+PAYMENT_BASE_URL=https://sandbox.wompi.co/v1
+PAYMENT_PUBLIC_KEY=
+PAYMENT_PRIVATE_KEY=
+PAYMENT_INTEGRITY_KEY=
+PAYMENT_EVENTS_SECRET=
+
+BASE_FEE_CENTS=500
+DEFAULT_DELIVERY_FEE_CENTS=1500
+
+VITE_API_BASE_URL=http://localhost:3001
 ```
 
-**apps/api/.env**:
+## Levantar Todo el Proyecto
 
-```dotenv
-DATABASE_URL=
-```
-
-### Iniciar Servicios
-
-Para levantar la base de datos y pgAdmin, ejecuta desde la raíz:
-
+Desde la raíz:
 ```bash
 cd infra
-docker-compose up -d
+docker compose up --build
 ```
 
-Los servicios estarán disponibles en:
+**Servicios disponibles:**
 
-- **Postgres**: `localhost:5432`
-- **pgAdmin**: `http://localhost:5050`
+| Servicio | URL |
+| :--- | :--- |
+| API | http://localhost:3001 |
+| Web | http://localhost:5173 |
+| pgAdmin | http://localhost:5050 |
+| Postgres | localhost:5432 |
 
-### 2. Conexión en pgAdmin
+## 🗄 Base de Datos (Docker)
 
-Para administrar la base de datos visualmente, los datos deben **coincidir exactamente** con lo configurado en tu `.env`:
+La API ejecuta automáticamente:
+* `prisma migrate deploy`
+* `seed` (si `RUN_SEED=true`)
 
-1. Accede a [http://localhost:5050](http://localhost:5050).
-2. Login (usa `PGADMIN_DEFAULT_EMAIL` y `PGADMIN_DEFAULT_PASSWORD` de tu `.env`):
-   - **Email**:
-   - **Password**:
-3. Registra un nuevo servidor (**Servers > Register > Server**):
-   - **Name**:
-   - **Connection > Host**:host.docker.internal
-   - **Connection > Port**:
-   - **Connection > Maintenance database**:
-   - **Connection > Username**:
-   - **Connection > Password**:
+Si quieres que haga seed automático, agrega en `docker-compose.yml` dentro del servicio api:
+```yaml
+environment:
+  RUN_SEED: "true"
+```
 
-## Base de Datos: Migraciones y Seed
-
-Una vez que la infraestructura esté corriendo y los archivos `.env` configurados, sigue estos pasos para preparar la base de datos:
-
-### 1. Generar Cliente y Tipos
-
+## 🌱 Seed Manual (modo local sin Docker)
 ```bash
 cd apps/api
-npx prisma generate
-```
-
-### 2. Ejecutar Migraciones
-
-Crea las tablas en la base de datos basándote en el esquema:
-
-```bash
-npx prisma migrate dev --name init
-```
-
-### 3. Poblar Datos (Seed)
-
-Para insertar los productos iniciales de prueba:
-
-```bash
+npx prisma migrate dev
 npx prisma db seed
 ```
 
-## API y Pruebas (Postman)
+## API
 
-La API corre por defecto en `http://localhost:3000`. También puedes acceder a la documentación interactiva en:
+**Base URL:** `http://localhost:3001`
 
-- **Swagger UI**: [http://localhost:3000/docs](http://localhost:3000/docs)
+### Productos
+* **Listar productos:** `GET /products`
+* **Obtener producto:** `GET /products/:id`
 
-### Endpoints Principales
+### Transacciones
 
-#### 1. Productos
+#### Crear transacción pendiente
+`POST /transactions`
 
-- **Listar productos**: `GET /products`
-- **Obtener producto**: `GET /products/:id`
+**Body:**
+```json
+{
+  "productId": "ID_DEL_PRODUCTO",
+  "customer": {
+    "fullName": "Juan Perez",
+    "email": "juan@example.com",
+    "phone": "3001234567"
+  },
+  "delivery": {
+    "address": "Calle 123 #45-67",
+    "city": "Medellin",
+    "notes": "Apto 101"
+  }
+}
+```
 
-#### 2. Transacciones
+**Response:**
+```json
+{
+  "transactionId": "cmm8gqvzp00059cepq95kj546",
+  "reference": "REF-123",
+  "status": "PENDING",
+  "breakdown": {
+    "productAmount": 10000,
+    "baseFee": 500,
+    "deliveryFee": 1500,
+    "totalAmount": 12000
+  }
+}
+```
 
-- **Crear Transacción Pendiente**: `POST /transactions`
-  - **Body (JSON)**:
+#### 2️⃣ Pagar transacción
+`POST /transactions/:id/pay`
 
-    ```json
-    {
-      "productId": "ID_DEL_PRODUCTO",
-      "customer": {
-        "fullName": "Juan Perez",
-        "email": "juan@example.com",
-        "phone": "3001234567"
-      },
-      "delivery": {
-        "address": "Calle 123 #45-67",
-        "city": "Bogotá",
-        "notes": "Torre 1 Apt 101"
-      }
-    }
-    ```
+**Body:**
+```json
+{
+  "cardToken": "tok_xxxxxxxxx",
+  "customerEmail": "juan@example.com"
+}
+```
+*El token se genera desde el frontend usando Wompi JS SDK.*
 
-- **Pagar Transacción**: `POST /transactions/:id/pay`
-  - **Body (JSON)**:
+**Response:**
+```json
+{
+  "status": "APPROVED"
+}
+```
+**Posibles estados:**
+* PENDING
+* APPROVED
+* DECLINED
+* ERROR
 
-    ```json
-    {
-      "card": {
-        "number": "4242424242424242",
-        "expMonth": "12",
-        "expYear": "25",
-        "cvc": "123",
-        "holder": "JUAN PEREZ"
-      }
-    }
-    ```
+#### Consultar estado
+`GET /transactions/:id`
 
-- **Consultar Estado**: `GET /transactions/:id`
+#### Sincronizar estado con Wompi
+`POST /transactions/:id/sync`
+
+## Pruebas
+**Ejecutar e2e:**
+```bash
+cd apps/api
+npm run test:e2e
+```
+**Los tests:**
+* Crean transacción
+* Mockean gateway
+* Ejecutan pago
+* Verifican actualización de estado
+* **Base de datos usada en test:** `checkout_test`
+
+## 📌 Notas Importantes
+* El seed solo corre si `RUN_SEED=true`
+* El gateway está mockeado en e2e
+* La API corre en el puerto 3001 (no 3000)
+* El frontend usa `VITE_API_BASE_URL`

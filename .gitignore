@@ -3,3 +3,6 @@ apps/api/.env
 apps/api/node_modules
 apps/api/package-lock.json
 apps/api/dist
+apps/web/node_modules
+apps/web/package-lock.json
+apps/web/.env

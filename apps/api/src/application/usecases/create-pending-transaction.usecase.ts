@@ -82,6 +82,7 @@ export class CreatePendingTransactionUseCase {
     return Ok({
       transactionId: tx.id,
       reference: tx.reference,
+      status: tx.status,
       breakdown: {
         productAmount,
         baseFee,
