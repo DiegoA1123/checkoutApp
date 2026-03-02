@@ -6,5 +6,5 @@ export class PayTransactionDto {
 
   @IsString()
   @MinLength(5)
-  cardToken!: string; // tok_stagtest_...
+  cardToken!: string;
 }
