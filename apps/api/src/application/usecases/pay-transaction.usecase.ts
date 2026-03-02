@@ -23,24 +23,30 @@ export class PayTransactionUseCase {
 
   async execute(input: {
     transactionId: string;
-    paymentSourceId: number;
+    cardToken: string;
     customerEmail: string;
   }): Promise<Result<Transaction, Error>> {
     const tx = await this.transactionRepository.findById(input.transactionId);
     if (!tx) return Err(new NotFoundError('Transaction'));
     if (tx.status !== TransactionStatus.PENDING)
-      return Err(new InvalidStateError('Transaction is not PENDING'));
+      return Err(
+        new InvalidStateError('La transacción no está en estado PENDING'),
+      );
 
     const product = await this.productRepository.findById(tx.productId);
     if (!product) return Err(new NotFoundError('Product'));
     if (product.stock <= 0) return Err(new OutOfStockError());
 
+    const { paymentSourceId } = await this.paymentGateway.createPaymentSource({
+      cardToken: input.cardToken,
+      customerEmail: input.customerEmail,
+    });
     const gatewayResponse = await this.paymentGateway.createTransaction({
       reference: tx.reference,
       amountInCents: tx.totalAmount,
       currency: 'COP',
       customerEmail: input.customerEmail,
-      paymentSourceId: input.paymentSourceId,
+      paymentSourceId,
     });
 
     const gatewayStatus = String(gatewayResponse.status || '').toUpperCase();

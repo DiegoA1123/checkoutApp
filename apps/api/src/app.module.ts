@@ -14,6 +14,7 @@ import { HttpModule } from '@nestjs/axios';
 import { CreatePendingTransactionUseCase } from './application/usecases/create-pending-transaction.usecase';
 import { PayTransactionUseCase } from './application/usecases/pay-transaction.usecase';
 import { PaymentGatewayService } from './infraestructure/payment/payment-gateway.service';
+import { SyncTransactionUseCase } from './application/usecases/sync-transaction.usecase';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { PaymentGatewayService } from './infraestructure/payment/payment-gateway
     { provide: 'PaymentGatewayPort', useClass: PaymentGatewayService },
     CreatePendingTransactionUseCase,
     PayTransactionUseCase,
+    SyncTransactionUseCase,
   ],
 })
 export class AppModule {}

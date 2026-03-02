@@ -1,4 +1,9 @@
 export interface PaymentGatewayPort {
+  createPaymentSource(input: {
+    cardToken: string;
+    customerEmail: string;
+  }): Promise<{ paymentSourceId: number; raw: any }>;
+
   createTransaction(input: {
     reference: string;
     amountInCents: number;
@@ -10,4 +15,6 @@ export interface PaymentGatewayPort {
     status: string;
     raw: any;
   }>;
+
+  getTransactionStatus(gatewayTransactionId: string): Promise<any>;
 }
